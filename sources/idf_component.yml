@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  lvgl/lvgl: "^8"
+  espressif/esp32_display_panel: "^1.0.0"
+  espressif/esp32_io_expander: "^1.1.0"
+  espressif/esp-lib-utils: "^0.2.0"
+  espressif/json_parser: "^1.0.3"

@@ -1,0 +1,22 @@
+menu "Tiny story configurationss"
+    config STORY_TIMEOUT_MS
+        int "Timeout of screen cleanup after full story printed"
+        default 6000
+
+    config TINY_STORY_LABEL_TEXT_LENGTH
+            int "Text length of the TinyStoryLabel"
+            default 512
+
+    config TINY_STORY_LABEL_BATCH_TIMEOUT_MS
+            int "Tiny story batch timeout in ms"
+            default 1000
+
+    config TINY_STORY_LABEL_HORIZONTAL_OFFSET
+            int 
+            default 25
+    
+    config TINY_STORY_LABEL_VERTICAL_OFFSET
+        int
+        default 15
+
+endmenu
