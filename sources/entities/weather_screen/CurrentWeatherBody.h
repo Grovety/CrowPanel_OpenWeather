@@ -25,6 +25,7 @@ class CurrentWeatherBody
     };
     FlexContainer       mainContainer;
     FlexContainer       spacerLeft;
+    FlexContainer       firstDataRowContainer;
     FlexContainer       infoContainer;
     FlexContainer       sunTimeInfoContainer;
     Image               sunInfoIcon;
@@ -57,13 +58,17 @@ public:
         mainContainer.create(parent, lv_pct(100), lv_pct(40), LV_FLEX_FLOW_ROW);
         mainContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
         spacerLeft.create(mainContainer.get(), lv_pct(12), lv_pct(100), LV_FLEX_FLOW_COLUMN);
-        infoContainer.create(mainContainer.get(), lv_pct(76), lv_pct(100), LV_FLEX_FLOW_ROW);
+        infoContainer.create(mainContainer.get(), lv_pct(76), lv_pct(100), LV_FLEX_FLOW_COLUMN);
+        infoContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
         lv_obj_set_style_border_width(infoContainer.get(), 1, LV_PART_MAIN);
         lv_obj_set_style_border_color(infoContainer.get(), lv_color_hex(0x888888), LV_PART_MAIN);
         lv_obj_set_style_radius(infoContainer.get(), 25, LV_PART_MAIN);
-        infoContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        firstDataRowContainer.create(infoContainer.get(), lv_pct(100), LV_SIZE_CONTENT,
+                                     LV_FLEX_FLOW_ROW);
+        firstDataRowContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
+                                    LV_FLEX_ALIGN_CENTER);
         {
-            sunTimeInfoContainer.create(infoContainer.get(), lv_pct(30), lv_pct(100),
+            sunTimeInfoContainer.create(firstDataRowContainer.get(), lv_pct(30), LV_SIZE_CONTENT,
                                         LV_FLEX_FLOW_COLUMN);
             sunTimeInfoContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                                        LV_FLEX_ALIGN_CENTER);
@@ -76,7 +81,7 @@ public:
         }
 
         {
-            weatherContainer.create(infoContainer.get(), lv_pct(40), LV_SIZE_CONTENT,
+            weatherContainer.create(firstDataRowContainer.get(), lv_pct(40), LV_SIZE_CONTENT,
                                     LV_FLEX_FLOW_COLUMN);
             weatherContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                                    LV_FLEX_ALIGN_CENTER);
@@ -91,17 +96,6 @@ public:
                     temperatureLabel.setPostfix(TEMPERATURE_POSTFIX);
                     /// CLOUDS ICON
                     icon.create(tempInfoContainer.get());
-                }
-
-                /// DESCRIPTION CONTAINER (row)
-                descriptionContainer.create(weatherContainer.get(), lv_pct(100), LV_SIZE_CONTENT,
-                                            LV_FLEX_FLOW_ROW);
-                descriptionContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
-                                           LV_FLEX_ALIGN_START);
-                descriptionContainer.padding(5, 0);
-                {
-                    /// DESCRIPTION LABEL
-                    descriptionLabel.create(descriptionContainer.get(), &lv_font_montserrat_20);
                 }
 
                 /// FEELS LIKE CONTAINER (row)
@@ -120,7 +114,7 @@ public:
         }
         {
             // currentParameters (column)
-            currentParameters.create(infoContainer.get(), lv_pct(30), LV_SIZE_CONTENT,
+            currentParameters.create(firstDataRowContainer.get(), lv_pct(30), LV_SIZE_CONTENT,
                                      LV_FLEX_FLOW_COLUMN);
             currentParameters.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
             currentParameters.padding(4, 10);
@@ -145,6 +139,18 @@ public:
                         parameterLabels[i].setPostfix(parameterPostfixes[i]);
                     }
                 }
+            }
+        }
+        {
+            /// DESCRIPTION CONTAINER (row)
+            descriptionContainer.create(infoContainer.get(), lv_pct(100), LV_SIZE_CONTENT,
+                                        LV_FLEX_FLOW_ROW);
+            descriptionContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
+                                       LV_FLEX_ALIGN_START);
+            descriptionContainer.padding(5, 0);
+            {
+                /// DESCRIPTION LABEL
+                descriptionLabel.create(descriptionContainer.get(), &lv_font_montserrat_20);
             }
         }
 

@@ -5,8 +5,6 @@
 class TimeZoneLabel : LabelBase
 {
     static constexpr uint8_t labelTextLenght = 30;
-    char                     GMT[15]         = "";
-    char                     currentTime[11] = "";
     char                     text[labelTextLenght];
 
 public:
@@ -27,9 +25,22 @@ public:
         {
             time_t     timestampStruct = timestamp;
             struct tm* timeInfo        = localtime(&timestampStruct);
-            strftime(currentTime, sizeof(currentTime), "%H:%M", timeInfo);
-            strftime(GMT, sizeof(GMT), "%A", timeInfo);
-            snprintf(text, sizeof(text), "%s, %s", currentTime, GMT);
+            strftime(text, sizeof(text), "%H:%M", timeInfo);
+        } else
+            text[0] = '\0';
+        updateOnScreen();
+        unlock();
+    }
+
+    void setCurrentDate(uint32_t timestamp)
+    {
+        lock();
+        clean(false);
+        if (timestamp != 0)
+        {
+            time_t     timestampStruct = timestamp;
+            struct tm* timeInfo        = localtime(&timestampStruct);
+            strftime(text, sizeof(text), "%m.%d.%y, %a", timeInfo);
         } else
             text[0] = '\0';
         updateOnScreen();

@@ -51,7 +51,8 @@ void WifiScreenHeader::create(lv_obj_t* parent)
         {
             // create location label.
             location.create(locationContainer.get(), &lv_font_montserrat_16);
-            timeZoneLabel.create(locationContainer.get(), &lv_font_montserrat_16);
+            timeLabel.create(locationContainer.get(), &lv_font_montserrat_16);
+            dateLabel.create(locationContainer.get(), &lv_font_montserrat_16);
         }
 
         /*************************/

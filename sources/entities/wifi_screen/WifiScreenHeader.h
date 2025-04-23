@@ -13,7 +13,8 @@ class WifiScreenHeader
 {
     WifiLabel              wifiLabel;
     LocationLabel          location;
-    TimeZoneLabel          timeZoneLabel;
+    TimeZoneLabel          timeLabel;
+    TimeZoneLabel          dateLabel;
     FlexContainer          header;
     FlexContainer          wifiInfoContainer;
     FlexContainer          locationContainer;
@@ -43,6 +44,7 @@ public:
 
     void setCurrentTime(uint32_t timestamp)
     {
-        timeZoneLabel.setCurrentTime(timestamp);
+        timeLabel.setCurrentTime(timestamp);
+        dateLabel.setCurrentDate(timestamp);
     }
 };

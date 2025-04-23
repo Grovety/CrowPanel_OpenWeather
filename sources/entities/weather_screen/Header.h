@@ -17,7 +17,8 @@ class Header
 {
     WifiLabel              wifiLabel;
     LocationLabel          location;
-    TimeZoneLabel          timeZoneLabel;
+    TimeZoneLabel          timeLabel;
+    TimeZoneLabel          dateLabel;
     FlexContainer          header;
     FlexContainer          wifiInfoContainer;
     FlexContainer          locationContainer;
@@ -84,7 +85,8 @@ public:
             {
                 // create location label.
                 location.create(locationContainer.get(), &lv_font_montserrat_16);
-                timeZoneLabel.create(locationContainer.get(), &lv_font_montserrat_16);
+                timeLabel.create(locationContainer.get(), &lv_font_montserrat_16);
+                dateLabel.create(locationContainer.get(), &lv_font_montserrat_16);
             }
 
             /*************************/
@@ -141,7 +143,8 @@ public:
 
     void setCurrentTime(uint32_t timestamp)
     {
-        timeZoneLabel.setCurrentTime(timestamp);
+        timeLabel.setCurrentTime(timestamp);
+        dateLabel.setCurrentDate(timestamp);
     }
 
 private:
