@@ -47,7 +47,7 @@ In Visual Studio Code:
 
 - Wait for the build to complete successfully
 
-### 2. Flash the Device
+### 3. Flash the Device
  - Run `ESP-IDF: Select Flash Method`
  - Select `UART`
  - Run `ESP-IDF: Select Port to use`
@@ -57,7 +57,3 @@ In Visual Studio Code:
  - Wait for flashing to complete
 
  - (Optional) Run ESP-IDF: `Monitor your device` to view logs and debug output
- 
- ### Flashing Prebuilt Images
-
-- Use `flash_tool.exe` to flash the prebuilt images.

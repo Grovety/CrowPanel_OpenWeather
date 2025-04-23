@@ -15,6 +15,7 @@ public:
         char    ssid[MAX_SSID_LEN + 1];
         char    pass[MAX_PASSPHRASE_LEN];
         uint8_t bssid[6];
+        bool    autoconnect;
     };
     enum Event
     {
@@ -28,9 +29,10 @@ public:
         void*     userData;
     };
     WIFI();
-    void init();
-    bool connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool waitForConnect = false);
-    bool isConnected();
+    void         init();
+    bool         connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool autoconnect,
+                           bool waitForConnect = false);
+    bool         isConnected();
     static WIFI& instance()
     {
         static WIFI instance;
@@ -40,9 +42,9 @@ public:
     bool disconnect();
     bool scan();
     bool getScannedAP(wifi_ap_record_t** AccessPoints, uint16_t* count);
-    bool saveAP(const char* ssid, const uint8_t* bssid, const char* pass);
+    bool saveAP(const char* ssid, const uint8_t* bssid, const char* pass, bool autoconnect);
     bool eraseAP(const char* ssid, const uint8_t* bssid);
-    bool getAP(const char* ssid, const uint8_t* bssid, char* pass);
+    bool getAP(const char* ssid, const uint8_t* bssid, char* pass, bool* autoconnect);
     bool getSavedAPs(std::vector<APInfo>& list);
     bool addCallback(Callback callback, void* userData);
     void invokeCallbacks(Event event);
@@ -51,7 +53,7 @@ public:
 private:
     static constexpr char    Tag[]            = "wifi";
     static constexpr uint8_t RetryCount       = 1;
-    static constexpr uint8_t WifiStoreVersion = 1;
+    static constexpr uint8_t WifiStoreVersion = 2;
 
     EventGroupHandle_t           eventGroup;
     int                          retryNum = 0;
@@ -65,6 +67,7 @@ private:
     char                       currSSID[MAX_SSID_LEN + 1];
     char                       currPass[MAX_PASSPHRASE_LEN];
     uint8_t                    currBSSID[6];
+    bool                       currAutoconnect;
     std::vector<CallbackEntry> callbacks;
 
     bool getWifiStoreVersion(uint8_t* version);

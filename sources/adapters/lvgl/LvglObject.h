@@ -26,7 +26,7 @@ public:
     LvglObject()
     {
         if (!mutex)
-            mutex = xSemaphoreCreateMutex();
+            mutex = xSemaphoreCreateMutexWithCaps(MALLOC_CAP_SPIRAM);
     }
     ~LvglObject()
     {

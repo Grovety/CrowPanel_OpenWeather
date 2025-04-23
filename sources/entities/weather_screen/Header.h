@@ -139,11 +139,6 @@ public:
         ESP_LOGI(Tag, "container height - %d", lv_obj_get_content_height(header.get()));
     }
 
-    void setGMT(int32_t newGMT)
-    {
-        timeZoneLabel.setGMT(newGMT);
-    }
-
     void setCurrentTime(uint32_t timestamp)
     {
         timeZoneLabel.setCurrentTime(timestamp);

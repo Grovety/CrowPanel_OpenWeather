@@ -13,9 +13,12 @@ struct AccessPointItem {
     SimpleLabel   label;
     SimpleLabel   actionLabel;
     Button        button;
-    char          ssid[MAX_SSID_LEN + 1];
-    int8_t        rssi;
-    uint8_t       bssid[6];
+    FlexContainer buttonContainer;
+    FlexContainer dataContainer;
+
+    char    ssid[MAX_SSID_LEN + 1];
+    int8_t  rssi;
+    uint8_t bssid[6];
     AccessPointItem(const char* s, int8_t r, uint8_t* b) : rssi(r)
     {
         strncpy(ssid, s, sizeof(ssid));
@@ -42,6 +45,8 @@ struct AccessPointItem {
           label(std::move(other.label)),
           actionLabel(std::move(other.actionLabel)),
           button(std::move(other.button)),
+          buttonContainer(std::move(other.buttonContainer)),
+          dataContainer(std::move(other.dataContainer)),
           rssi(other.rssi)
     {
         strncpy(ssid, other.ssid, sizeof(ssid));
@@ -58,11 +63,13 @@ struct AccessPointItem {
             ssid[sizeof(ssid) - 1] = '\0';
             memcpy(bssid, other.bssid, 6);
 
-            itemContainer = std::move(other.itemContainer);
-            icon          = std::move(other.icon);
-            label         = std::move(other.label);
-            actionLabel   = std::move(other.actionLabel);
-            button        = std::move(other.button);
+            itemContainer   = std::move(other.itemContainer);
+            icon            = std::move(other.icon);
+            label           = std::move(other.label);
+            actionLabel     = std::move(other.actionLabel);
+            button          = std::move(other.button);
+            buttonContainer = std::move(other.buttonContainer);
+            dataContainer   = std::move(other.dataContainer);
         }
         return *this;
     }

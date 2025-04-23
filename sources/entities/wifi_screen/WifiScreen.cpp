@@ -233,10 +233,16 @@ void WifiScreen::create(lv_obj_t* screen_)
                                       LV_ALIGN_LEFT_MID);
                 cityEntryLabel.setText("City:");
                 textAreaCity = lv_textarea_create(cityContentWrapContainer.get());
-                lv_textarea_set_text(textAreaCity, "");
+                Location::instance().get(cityText);
+                if (cityText[0] == '\0')
+                    snprintf(cityText, sizeof(cityText), "Auto detect");
+                lv_textarea_set_text(textAreaCity, cityText);
                 lv_textarea_set_one_line(textAreaCity, true);
                 lv_obj_set_width(textAreaCity, lv_pct(60));
                 lv_obj_add_event_cb(textAreaCity, textareaEventCallback, LV_EVENT_ALL, NULL);
+                lv_style_init(&cityTextareaStyle);
+                lv_style_set_text_color(&cityTextareaStyle, lv_color_hex(0x777777));
+                lv_obj_add_style(textAreaCity, &cityTextareaStyle, LV_PART_MAIN);
             }
         }
 
@@ -348,7 +354,7 @@ void WifiScreen::setBirghtnessSliderDisabled(bool disabled)
     }
 }
 
-void WifiScreen::connect(AccessPointItem* net, char* password)
+void WifiScreen::connect(AccessPointItem* net, char* password, bool autoconnect)
 {
     ESP_LOGI(Tag, "Connecting to %s (%02X:%02X:%02X:%02X:%02X:%02X), rssi: %d, pass: %s", net->ssid,
              net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
@@ -360,13 +366,18 @@ void WifiScreen::connect(AccessPointItem* net, char* password)
         lv_obj_del(textAreaPassword);
         textAreaPassword = nullptr;
     }
+    if (checkboxAutoconnect)
+    {
+        lv_obj_del(checkboxAutoconnect);
+        checkboxAutoconnect = nullptr;
+    }
     if (keyboard)
     {
         lv_obj_remove_event_cb(keyboard, keyboardEventCallback);
         lv_obj_del(keyboard);
         keyboard = nullptr;
     }
-    WIFI::instance().connectAP(net->ssid, net->bssid, password);
+    WIFI::instance().connectAP(net->ssid, net->bssid, password, autoconnect);
 }
 
 void WifiScreen::updateTimerCallback(TimerHandle_t xTimer)
@@ -394,10 +405,16 @@ void WifiScreen::updateWIFIList()
     std::vector<std::string> found_ssids;
     ESP_LOGI(Tag, "found - %d", ap_num);
 
+    std::vector<WIFI::APInfo> savedAPs;
+    WIFI::instance().getSavedAPs(savedAPs);
+    WIFI::APInfo* bestAutoconnect = nullptr;
+    int8_t        bestRSSI        = -128;
+
     for (int i = 0; i < ap_num; i++)
     {
-        const char* ssid = (const char*)ap_records[i].ssid;
-        int8_t      rssi = ap_records[i].rssi;
+        const char* ssid  = (const char*)ap_records[i].ssid;
+        int8_t      rssi  = ap_records[i].rssi;
+        uint8_t*    bssid = ap_records[i].bssid;
         if (ssid[0] == '\0')
             continue;
         found_ssids.push_back(ssid);
@@ -422,7 +439,21 @@ void WifiScreen::updateWIFIList()
                      net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
                      net->bssid[5], net->rssi);
         }
+
+        for (auto& ap : savedAPs)
+            if ((ap.autoconnect) && (memcmp(ap.bssid, bssid, 6) == 0))
+                if (rssi > bestRSSI)
+                {
+                    bestRSSI        = rssi;
+                    bestAutoconnect = &ap;
+                }
     }
+
+    for (auto& ap : savedAPs)
+        ESP_LOGI(Tag,
+                 "AP (auto) SSID: %s (BSSID: %02x:%02x:%02x:%02x:%02x:%02x), auto - %d, PASS: %s",
+                 ap.ssid, ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4],
+                 ap.bssid[5], ap.autoconnect, ap.pass);
 
     wifiList.erase(std::remove_if(wifiList.begin(), wifiList.end(),
                                   [&](AccessPointItem* net) {
@@ -440,16 +471,22 @@ void WifiScreen::updateWIFIList()
                                   }),
                    wifiList.end());
 
-    std::vector<WIFI::APInfo> savedAPs;
-
-    if (WIFI::instance().getSavedAPs(savedAPs))
+    if (bestAutoconnect && !WIFI::instance().isConnected())
     {
-        for (size_t i = 0; i < savedAPs.size(); ++i)
+        ESP_LOGI(Tag, "Autoconnect to best SSID: %s (rssi: %d)", bestAutoconnect->ssid, bestRSSI);
+        AccessPointItem* netToConnect = nullptr;
+        for (auto& net : wifiList)
         {
-            const auto& ap = savedAPs[i];
-            ESP_LOGI(Tag, "AP #%d: SSID: %s (BSSID: %02x:%02x:%02x:%02x:%02x:%02x) PASS: %s", i + 1,
-                     ap.ssid, ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4],
-                     ap.bssid[5], ap.pass);
+            if (memcmp(net->bssid, bestAutoconnect->bssid, 6) == 0)
+            {
+                netToConnect = net;
+                break;
+            }
+        }
+        if (netToConnect)
+        {
+            currentAP = netToConnect;
+            connect(netToConnect, bestAutoconnect->pass, bestAutoconnect->autoconnect);
         }
     }
 }
@@ -591,7 +628,14 @@ void WifiScreen::passwordKeyboardEventHandler()
         lv_obj_del(screen->textAreaPassword);
         screen->textAreaPassword = nullptr;
     }
-    screen->connect(screen->currentAP, password);
+    bool autoconnect = lv_obj_get_state(screen->checkboxAutoconnect) & LV_STATE_CHECKED;
+    if (screen->checkboxAutoconnect)
+    {
+        lv_obj_del(screen->checkboxAutoconnect);
+        screen->checkboxAutoconnect = nullptr;
+    }
+
+    screen->connect(screen->currentAP, password, autoconnect);
 }
 
 void WifiScreen::cityKeyboardEventHandler()
@@ -600,26 +644,192 @@ void WifiScreen::cityKeyboardEventHandler()
     char        city[MAX_PASSPHRASE_LEN] = { 0 };
     strncpy(city, lv_textarea_get_text(screen->textAreaCity), 32);
     ESP_LOGI(Tag, "City: %s", city);
-    Location::instance().setManual(city);
+    if (Weather::instance().checkLocation(city))
+    {
+        Location::instance().setManual(city);
+        lv_timer_create(
+            [](lv_timer_t* t) {
+                WifiScreen* screen = (WifiScreen*)t->user_data;
+                lv_obj_set_style_border_color(screen->textAreaCity, lv_color_hex(0x009900),
+                                              0); // green
+                lv_obj_set_style_border_width(screen->textAreaCity, 3, 0);
+                lv_event_send(screen->textAreaCity, LV_EVENT_DEFOCUSED, NULL);
+                lv_obj_clear_state(screen->textAreaCity, LV_STATE_FOCUSED);
+                lv_obj_clear_state(screen->textAreaCity, LV_STATE_EDITED);
+                lv_textarea_clear_selection(screen->textAreaCity);
+                lv_timer_del(t);
+            },
+            0, screen);
+
+        lv_timer_create(
+            [](lv_timer_t* t) {
+                WifiScreen* screen = (WifiScreen*)t->user_data;
+                lv_obj_set_style_border_width(screen->textAreaCity, 0, 0);
+                // In order to print in correct case (First letter upper-case, others low-case).
+                if (!lv_obj_has_state(screen->textAreaCity, LV_STATE_FOCUSED))
+                {
+                    if (!Location::instance().get(screen->cityText))
+                        snprintf(screen->cityText, Location::MaxCityNameLength, "Auto detect");
+                    lv_textarea_set_text(screen->textAreaCity, screen->cityText);
+                }
+                lv_timer_del(t);
+            },
+            2000, screen);
+    } else
+    {
+        lv_timer_create(
+            [](lv_timer_t* t) {
+                WifiScreen* screen = (WifiScreen*)t->user_data;
+
+                lv_obj_set_style_border_color(screen->textAreaCity, lv_color_hex(0x990000), // red
+                                              0);
+                lv_obj_set_style_border_width(screen->textAreaCity, 3, 0);
+                lv_event_send(screen->textAreaCity, LV_EVENT_DEFOCUSED, NULL);
+                lv_obj_clear_state(screen->textAreaCity, LV_STATE_FOCUSED);
+                lv_obj_clear_state(screen->textAreaCity, LV_STATE_EDITED);
+                lv_textarea_clear_selection(screen->textAreaCity);
+                lv_timer_del(t);
+            },
+            0, screen);
+
+        lv_timer_create(
+            [](lv_timer_t* t) {
+                WifiScreen* screen = (WifiScreen*)t->user_data;
+                if (!lv_obj_has_state(screen->textAreaCity, LV_STATE_FOCUSED))
+                {
+                    if (!Location::instance().get(screen->cityText))
+                        snprintf(screen->cityText, Location::MaxCityNameLength, "Auto detect");
+                    lv_textarea_set_text(screen->textAreaCity, screen->cityText);
+                }
+                lv_obj_set_style_border_width(screen->textAreaCity, 0, 0);
+                lv_timer_del(t);
+            },
+            2000, screen);
+    }
+}
+
+bool WifiScreen::cityTextareaCallback(lv_event_t* e)
+{
+    lv_event_code_t code      = lv_event_get_code(e);
+    WifiScreen*     screen    = &WifiScreen::instance();
+    bool            retVal    = true;
+    static bool     defocused = true;
+    if ((code == LV_EVENT_CLICKED) || (code == LV_EVENT_FOCUSED))
+    {
+        if (!WIFI::instance().isConnected())
+        {
+            lv_timer_create(
+                [](lv_timer_t* t) {
+                    WifiScreen* screen = (WifiScreen*)t->user_data;
+                    lv_obj_set_style_border_color(screen->textAreaCity, lv_color_hex(0xaa6600),
+                                                  0); // orange
+                    lv_obj_set_style_border_width(screen->textAreaCity, 3, 0);
+                    lv_textarea_set_text(screen->textAreaCity, "WIFI not connected");
+                    lv_event_send(screen->textAreaCity, LV_EVENT_DEFOCUSED, NULL);
+                    lv_obj_clear_state(screen->textAreaCity, LV_STATE_FOCUSED);
+                    lv_obj_clear_state(screen->textAreaCity, LV_STATE_EDITED);
+                    lv_textarea_clear_selection(screen->textAreaCity);
+                    lv_timer_del(t);
+                },
+                0, screen);
+
+            lv_timer_create(
+                [](lv_timer_t* t) {
+                    WifiScreen* screen = (WifiScreen*)t->user_data;
+                    if (!Location::instance().get(screen->cityText))
+                        snprintf(screen->cityText, sizeof(screen->cityText), "Auto detect");
+                    lv_textarea_set_text(screen->textAreaCity, screen->cityText);
+                    lv_obj_set_style_border_width(screen->textAreaCity, 0, 0);
+                    lv_timer_del(t);
+                    ESP_LOGI(Tag, "textAreaCity: %s", screen->cityText);
+                },
+                3500, screen);
+            retVal = false;
+        } else if (strncmp(screen->cityText, "Auto detect", 11) == 0)
+        {
+            lv_timer_create(
+                [](lv_timer_t* t) {
+                    WifiScreen* screen = (WifiScreen*)t->user_data;
+                    memset(screen->cityText, '\0', Location::MaxCityNameLength);
+                    lv_textarea_set_text(screen->textAreaCity, screen->cityText);
+                    lv_timer_del(t);
+                },
+                0, screen);
+        }
+
+        if (defocused)
+        {
+            defocused = false;
+            lv_timer_create(
+                [](lv_timer_t* t) {
+                    WifiScreen* screen = (WifiScreen*)t->user_data;
+                    lv_style_set_text_color(&screen->cityTextareaStyle, lv_color_hex(0xffffff));
+                    lv_obj_refresh_style(screen->textAreaCity, LV_PART_MAIN, LV_STYLE_PROP_ANY);
+                    lv_timer_del(t);
+                },
+                0, screen);
+        }
+    } else if (code == LV_EVENT_DEFOCUSED)
+    {
+        if (!defocused)
+        {
+            defocused = true;
+            lv_timer_create(
+                [](lv_timer_t* t) {
+                    WifiScreen* screen = (WifiScreen*)t->user_data;
+                    lv_style_set_text_color(&screen->cityTextareaStyle, lv_color_hex(0x777777));
+                    lv_obj_refresh_style(screen->textAreaCity, LV_PART_MAIN, LV_STYLE_PROP_ANY);
+                    lv_timer_del(t);
+                },
+                0, screen);
+            if (screen->keyboard)
+            {
+                lv_obj_remove_event_cb(screen->keyboard, keyboardEventCallback);
+                lv_obj_del(screen->keyboard);
+                screen->keyboard = nullptr;
+            }
+        }
+        retVal = false;
+    }
+    return retVal;
 }
 
 void WifiScreen::textareaEventCallback(lv_event_t* e)
 {
-    lv_event_code_t code   = lv_event_get_code(e);
-    WifiScreen*     screen = &WifiScreen::instance();
-    if ((code == LV_EVENT_CLICKED) || (code == LV_EVENT_FOCUSED))
+    lv_event_code_t code           = lv_event_get_code(e);
+    WifiScreen*     screen         = &WifiScreen::instance();
+    bool            createKeyboard = true;
+    screen->lock();
+    if (lv_event_get_current_target(e) == screen->textAreaCity)
     {
-        screen->lock();
+        createKeyboard = screen->cityTextareaCallback(e);
+    }
+    if (((code == LV_EVENT_CLICKED) || (code == LV_EVENT_FOCUSED)) && (createKeyboard))
+    {
         if (!screen->keyboard)
         {
             screen->keyboard = lv_keyboard_create(screen->screen);
             lv_obj_set_size(screen->keyboard, LV_HOR_RES, LV_VER_RES / 2);
             lv_obj_add_event_cb(screen->keyboard, keyboardEventCallback, LV_EVENT_ALL, NULL);
+
+            if (lv_event_get_current_target(e) == screen->textAreaCity)
+            {
+                lv_timer_create(
+                    [](lv_timer_t* t) {
+                        WifiScreen* screen = static_cast<WifiScreen*>(t->user_data);
+                        lv_obj_add_state(screen->textAreaCity, LV_STATE_FOCUSED);
+                        // lv_event_send(screen->textAreaCity, LV_EVENT_FOCUSED, NULL);
+                        // lv_textarea_set_cursor_pos(screen->textAreaCity,
+                        // LV_TEXTAREA_CURSOR_LAST);
+                        lv_timer_del(t);
+                    },
+                    0, screen);
+            }
         }
 
         lv_keyboard_set_textarea(screen->keyboard, lv_event_get_current_target(e));
-        screen->unlock();
     }
+    screen->unlock();
 }
 
 void WifiScreen::brightnessSwitchCallback(lv_event_t* e)
@@ -661,11 +871,12 @@ void WifiScreen::connectButtonCallback(lv_event_t* e, void* _context)
     screen->currentAP = net;
 
     char password[MAX_PASSPHRASE_LEN];
-    if (WIFI::instance().getAP(net->ssid, net->bssid, password))
+    bool autoconnect;
+    if (WIFI::instance().getAP(net->ssid, net->bssid, password, &autoconnect))
     {
         screen->lock();
         ESP_LOGI(Tag, "connectButton AP found lock");
-        screen->connect(net, password);
+        screen->connect(net, password, autoconnect);
         screen->unlock();
         return;
     }
@@ -677,12 +888,21 @@ void WifiScreen::connectButtonCallback(lv_event_t* e, void* _context)
         lv_obj_del(screen->textAreaPassword);
         screen->textAreaPassword = nullptr;
     }
-    screen->textAreaPassword = lv_textarea_create(net->itemContainer.get());
+    screen->textAreaPassword = lv_textarea_create(net->dataContainer.get());
     lv_textarea_set_text(screen->textAreaPassword, "");
     lv_textarea_set_password_mode(screen->textAreaPassword, true);
     lv_textarea_set_one_line(screen->textAreaPassword, true);
     lv_obj_set_width(screen->textAreaPassword, lv_pct(60));
     lv_obj_add_event_cb(screen->textAreaPassword, textareaEventCallback, LV_EVENT_ALL, NULL);
+
+    if (screen->checkboxAutoconnect)
+    {
+        lv_obj_del(screen->checkboxAutoconnect);
+        screen->checkboxAutoconnect = nullptr;
+    }
+    screen->checkboxAutoconnect = lv_checkbox_create(net->dataContainer.get());
+    lv_checkbox_set_text(screen->checkboxAutoconnect, "Autoconnect");
+    lv_obj_add_state(screen->checkboxAutoconnect, LV_STATE_CHECKED);
 
     if (!screen->keyboard)
     {
@@ -691,9 +911,32 @@ void WifiScreen::connectButtonCallback(lv_event_t* e, void* _context)
         lv_obj_add_event_cb(screen->keyboard, keyboardEventCallback, LV_EVENT_ALL, NULL);
     }
 
-    lv_keyboard_set_textarea(screen->keyboard, screen->textAreaPassword); /*Focus it on one of the
-                                                                                            text
-                                                                             areas to start*/
+    lv_keyboard_set_textarea(screen->keyboard, screen->textAreaPassword); /*Focus it on one of
+                                                                             the text areas to
+                                                                             start*/
+
+    lv_obj_t* ta         = screen->textAreaPassword;
+    lv_obj_t* scrollable = ta;
+    while (scrollable && !lv_obj_has_flag(scrollable, LV_OBJ_FLAG_SCROLLABLE))
+    {
+        scrollable = lv_obj_get_parent(scrollable);
+    }
+    if (scrollable)
+    {
+        lv_area_t ta_coords;
+        lv_area_t scroll_coords;
+        lv_obj_get_coords(ta, &ta_coords);
+        lv_obj_get_coords(scrollable, &scroll_coords);
+        lv_coord_t ta_y     = ta_coords.y1 - scroll_coords.y1;
+        lv_coord_t ta_h     = lv_area_get_height(&ta_coords);
+        lv_coord_t scroll_h = lv_obj_get_height(scrollable);
+        lv_coord_t target_y = ta_y + ta_h / 2 - scroll_h / 2;
+
+        lv_obj_scroll_to_y(scrollable, target_y, LV_ANIM_OFF);
+        ESP_LOGI(Tag, "Scrolling to %d(%d, %d, %d)", target_y, ta_y, ta_h, scroll_h);
+    } else
+        ESP_LOGE(Tag, "Scrollable obj not found");
+
     screen->unlock();
 }
 

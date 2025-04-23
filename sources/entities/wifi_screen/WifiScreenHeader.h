@@ -41,11 +41,6 @@ public:
         location.setCountry(country);
     }
 
-    void setGMT(int32_t newGMT)
-    {
-        timeZoneLabel.setGMT(newGMT);
-    }
-
     void setCurrentTime(uint32_t timestamp)
     {
         timeZoneLabel.setCurrentTime(timestamp);

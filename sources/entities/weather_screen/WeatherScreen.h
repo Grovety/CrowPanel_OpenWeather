@@ -42,7 +42,6 @@ public:
         currentWeatherBody.setCurrentParams(data);
         header.setCity(data.city);
         header.setCountry(data.country);
-        header.setGMT(data.timestampOffset);
         header.setCurrentTime(data.timestamp);
     }
 

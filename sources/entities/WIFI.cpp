@@ -40,7 +40,7 @@ void WIFI::eventHandler(void* arg, esp_event_base_t eventBase, int32_t eventId, 
         wifi->retryNum = -1;
         xEventGroupSetBits(wifi->eventGroup, WIFI_CONNECTED_BIT);
         xEventGroupClearBits(wifi->eventGroup, WIFI_DISCONNECTED_BIT);
-        wifi->saveAP(wifi->currSSID, wifi->currBSSID, wifi->currPass);
+        wifi->saveAP(wifi->currSSID, wifi->currBSSID, wifi->currPass, wifi->currAutoconnect);
         wifi->invokeCallbacks(CONNECTED);
     }
 }
@@ -61,29 +61,32 @@ WIFI::WIFI()
 
 void WIFI::init()
 {
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
     uint8_t wifiStoreSavedVersion = 0;
     if (getWifiStoreVersion(&wifiStoreSavedVersion))
     {
         if (wifiStoreSavedVersion < WifiStoreVersion)
         {
             nvs_handle_t handle;
-            if ((nvs_flash_erase_partition("wifi_store") == ESP_OK) &&
-                (nvs_open("wifi_store", NVS_READWRITE, &handle) == ESP_OK))
+            if (nvs_open("wifi_store", NVS_READWRITE, &handle) == ESP_OK)
             {
+                nvs_iterator_t it;
+                if (nvs_entry_find("nvs", "wifi_store", NVS_TYPE_BLOB, &it) == ESP_OK)
+                    while (1)
+                    {
+                        nvs_entry_info_t info;
+                        nvs_entry_info(it, &info);
+                        nvs_erase_key(handle, info.key);
+                        if (nvs_entry_next(&it) != ESP_OK)
+                            break;
+                    }
                 nvs_set_u8(handle, "__version__", WifiStoreVersion);
                 nvs_commit(handle);
                 nvs_close(handle);
                 ESP_LOGI(Tag, "wifi_store reset and version updated to %d", WifiStoreVersion);
-            }
+            } else
+                ESP_LOGE(Tag, "wifi_store reset failed");
         }
+        ESP_LOGI(Tag, "wifi_store version: %d", wifiStoreSavedVersion);
     } else
         ESP_LOGE(Tag, "Get wifi_store version failed");
     ESP_ERROR_CHECK(esp_netif_init());
@@ -99,7 +102,8 @@ void WIFI::init()
     mutex = xSemaphoreCreateMutex();
 }
 
-bool WIFI::connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool waitForConnect)
+bool WIFI::connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool autoconnect,
+                     bool waitForConnect)
 {
     xSemaphoreTake(mutex, portMAX_DELAY);
     esp_wifi_stop();
@@ -121,6 +125,7 @@ bool WIFI::connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool wa
     strncpy(currSSID, ssid, sizeof(currSSID));
     memcpy(currBSSID, bssid, sizeof(currBSSID));
     strncpy(currPass, pass, sizeof(currPass));
+    currAutoconnect = autoconnect;
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &config));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_LOGI(Tag, "connect() ssid = %s, pass %s", ssid, pass);
@@ -234,7 +239,7 @@ static void makeNvsKey(char* outKey, size_t len, const uint8_t* bssid)
              bssid[4], bssid[5]);
 }
 
-bool WIFI::saveAP(const char* ssid, const uint8_t* bssid, const char* pass)
+bool WIFI::saveAP(const char* ssid, const uint8_t* bssid, const char* pass, bool autoconnect)
 {
     if (!ssid || !bssid || !pass)
         return false;
@@ -246,6 +251,7 @@ bool WIFI::saveAP(const char* ssid, const uint8_t* bssid, const char* pass)
     strncpy(ap.ssid, ssid, sizeof(ap.ssid) - 1);
     strncpy(ap.pass, pass, sizeof(ap.pass) - 1);
     memcpy(ap.bssid, bssid, 6);
+    ap.autoconnect = autoconnect;
 
     makeNvsKey(key, sizeof(key), bssid);
 
@@ -259,15 +265,15 @@ bool WIFI::saveAP(const char* ssid, const uint8_t* bssid, const char* pass)
     if (!retVal)
         ESP_LOGE(Tag, "Failed to save AP: %s", ssid);
     else
-        ESP_LOGI(Tag, "Saved AP: %s (key: %s) %02X:%02X:%02X:%02X:%02X:%02X", ssid, key, bssid[0],
-                 bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+        ESP_LOGI(Tag, "Saved AP: %s (key: %s, autoconnect -%d) %02X:%02X:%02X:%02X:%02X:%02X", ssid,
+                 key, autoconnect, bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 
     return retVal;
 }
 
-bool WIFI::getAP(const char* ssid, const uint8_t* bssid, char* pass)
+bool WIFI::getAP(const char* ssid, const uint8_t* bssid, char* pass, bool* autoconnect)
 {
-    if (!ssid || !bssid || !pass)
+    if (!ssid || !bssid || !pass || !autoconnect)
         return false;
 
     char         key[NVS_KEY_NAME_MAX_SIZE];
@@ -287,6 +293,7 @@ bool WIFI::getAP(const char* ssid, const uint8_t* bssid, char* pass)
         return false;
 
     strncpy(pass, ap.pass, MAX_PASSPHRASE_LEN);
+    *autoconnect = ap.autoconnect;
     return true;
 }
 
@@ -368,7 +375,7 @@ bool WIFI::getWifiStoreVersion(uint8_t* version)
 
     nvs_handle_t handle;
 
-    if (nvs_open("wifi_store", NVS_READONLY, &handle) != ESP_OK)
+    if (nvs_open("wifi_store", NVS_READWRITE, &handle) != ESP_OK)
         return false;
 
     esp_err_t err = nvs_get_u8(handle, "__version__", version);
