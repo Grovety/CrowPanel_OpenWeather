@@ -1,6 +1,7 @@
 #include "WifiScreen.h"
 #include "entities/Brightness.h"
 #include "entities/Location.h"
+#include "esp_heap_caps.h"
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
@@ -95,7 +96,12 @@ void WifiScreen::unitsConfigurationHandler(lv_event_t* e)
 
 void WifiScreen::create(lv_obj_t* screen_)
 {
+#ifdef COMMON_DEMO_APP
+    createScreen(screen_);
+#else
     createScreen();
+#endif
+    lock();
     mainContainer.create(screen, LV_PCT(100), LV_PCT(100), LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_bg_color(mainContainer.get(), lv_color_hex(0x222222), LV_PART_MAIN);
     mainContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -187,6 +193,8 @@ void WifiScreen::create(lv_obj_t* screen_)
                 lv_style_set_opa(&brightnessSliderStyle, LV_OPA_50);
                 lv_style_set_bg_color(&brightnessSliderStyle, lv_color_hex(0xAAAAAA));
                 lv_style_set_border_color(&brightnessSliderStyle, lv_color_hex(0xCCCCCC));
+                lv_obj_add_style(brightnessSlider, &brightnessSliderStyle,
+                                 LV_PART_MAIN | LV_STATE_DISABLED);
 
                 /// get default.
                 /// set default.
@@ -304,28 +312,28 @@ void WifiScreen::create(lv_obj_t* screen_)
 
     WIFI::instance().addCallback(wifiEventHandler, NULL);
 
-    // start timer to update.
-    updateTimer = xTimerCreate("updateTimer", 60000, pdTRUE, (void*)this, updateTimerCallback);
-    xTimerStart(updateTimer, 0);
+    unlock();
 }
 
 void WifiScreen::wifiEventHandler(WIFI::Event event, void* context)
 {
+    WifiScreen& screen = WifiScreen::instance();
+    screen.lock();
     switch (event)
     {
     case WIFI::Event::CONNECTED:
-        if (WifiScreen::instance().currentAP)
-            WifiScreen::instance().currentAP->remove();
+        if (screen.currentAP)
+            screen.currentAP->remove();
         ESP_LOGI(Tag, "wifi connected, AP removed");
         break;
     case WIFI::Event::DISCONNECTED:
-        if (WifiScreen::instance().currentAP)
-            WifiScreen::instance().currentAP->show(
-                WifiScreen::instance().availableListContainer.get());
+        if (screen.currentAP)
+
+            screen.currentAP->show(screen.availableListContainer.get());
         break;
     case WIFI::Event::CONNECT_FAIL:
-        if (WifiScreen::instance().currentAP)
-            WifiScreen::instance().currentAP->deselect();
+        if (screen.currentAP)
+            screen.currentAP->deselect();
         break;
     default:
         break;
@@ -335,6 +343,7 @@ void WifiScreen::wifiEventHandler(WIFI::Event event, void* context)
     int8_t rssi                   = 0;
     WIFI::instance().getCurrentAP(ssid, &rssi);
     WifiScreen::instance().updateCurrentSSID(ssid, rssi);
+    screen.unlock();
 }
 
 void WifiScreen::setBirghtnessSliderDisabled(bool disabled)
@@ -343,19 +352,16 @@ void WifiScreen::setBirghtnessSliderDisabled(bool disabled)
     {
         lv_obj_add_state(brightnessSlider, LV_STATE_DISABLED);
         lv_obj_clear_flag(brightnessSlider, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_style(brightnessSlider, &brightnessSliderStyle,
-                         LV_PART_MAIN | LV_STATE_DISABLED);
     } else
     {
         lv_obj_clear_state(brightnessSlider, LV_STATE_DISABLED);
         lv_obj_add_flag(brightnessSlider, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_remove_style(brightnessSlider, &brightnessSliderStyle,
-                            LV_PART_MAIN | LV_STATE_DISABLED);
     }
 }
 
 void WifiScreen::connect(AccessPointItem* net, char* password, bool autoconnect)
 {
+    currentAP = net;
     ESP_LOGI(Tag, "Connecting to %s (%02X:%02X:%02X:%02X:%02X:%02X), rssi: %d, pass: %s", net->ssid,
              net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
              net->bssid[5], net->rssi, password);
@@ -380,119 +386,9 @@ void WifiScreen::connect(AccessPointItem* net, char* password, bool autoconnect)
     WIFI::instance().connectAP(net->ssid, net->bssid, password, autoconnect);
 }
 
-void WifiScreen::updateTimerCallback(TimerHandle_t xTimer)
-{
-    WifiScreen* screen             = (WifiScreen*)pvTimerGetTimerID(xTimer);
-    char        ssid[MAX_SSID_LEN] = { 0 };
-    int8_t      rssi               = 0;
-
-    screen->lock();
-    if (WIFI::instance().isConnected())
-    {
-        WIFI::instance().getCurrentAP(ssid, &rssi);
-        screen->updateCurrentSSID(ssid, rssi);
-    }
-    screen->updateWIFIList();
-    screen->unlock();
-}
-
-void WifiScreen::updateWIFIList()
-{
-    wifi_ap_record_t* ap_records;
-    uint16_t          ap_num;
-    WIFI::instance().scan();
-    WIFI::instance().getScannedAP(&ap_records, &ap_num);
-    std::vector<std::string> found_ssids;
-    ESP_LOGI(Tag, "found - %d", ap_num);
-
-    std::vector<WIFI::APInfo> savedAPs;
-    WIFI::instance().getSavedAPs(savedAPs);
-    WIFI::APInfo* bestAutoconnect = nullptr;
-    int8_t        bestRSSI        = -128;
-
-    for (int i = 0; i < ap_num; i++)
-    {
-        const char* ssid  = (const char*)ap_records[i].ssid;
-        int8_t      rssi  = ap_records[i].rssi;
-        uint8_t*    bssid = ap_records[i].bssid;
-        if (ssid[0] == '\0')
-            continue;
-        found_ssids.push_back(ssid);
-        bool updated = false;
-        for (auto& net : wifiList)
-        {
-            if (strcmp(net->ssid, ssid) == 0)
-            {
-                net->rssi = rssi;
-                net->setIcon(rssi);
-                updated = true;
-                break;
-            }
-        }
-
-        if (!updated)
-        {
-            AccessPointItem* net = new AccessPointItem(ssid, rssi, ap_records[i].bssid);
-            wifiList.emplace_back(net);
-            net->show(WifiScreen::instance().availableListContainer.get());
-            ESP_LOGI(Tag, "%s(BSSID: %02x:%02x:%02x:%02x:%02x:%02x), rssi - %d", net->ssid,
-                     net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
-                     net->bssid[5], net->rssi);
-        }
-
-        for (auto& ap : savedAPs)
-            if ((ap.autoconnect) && (memcmp(ap.bssid, bssid, 6) == 0))
-                if (rssi > bestRSSI)
-                {
-                    bestRSSI        = rssi;
-                    bestAutoconnect = &ap;
-                }
-    }
-
-    for (auto& ap : savedAPs)
-        ESP_LOGI(Tag,
-                 "AP (auto) SSID: %s (BSSID: %02x:%02x:%02x:%02x:%02x:%02x), auto - %d, PASS: %s",
-                 ap.ssid, ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4],
-                 ap.bssid[5], ap.autoconnect, ap.pass);
-
-    wifiList.erase(std::remove_if(wifiList.begin(), wifiList.end(),
-                                  [&](AccessPointItem* net) {
-                                      bool found = std::find(found_ssids.begin(), found_ssids.end(),
-                                                             net->ssid) != found_ssids.end();
-                                      if (!found)
-                                      {
-                                          lvgl_port_lock();
-                                          net->remove();
-                                          delete net;
-                                          lvgl_port_unlock();
-                                          return true;
-                                      }
-                                      return false;
-                                  }),
-                   wifiList.end());
-
-    if (bestAutoconnect && !WIFI::instance().isConnected())
-    {
-        ESP_LOGI(Tag, "Autoconnect to best SSID: %s (rssi: %d)", bestAutoconnect->ssid, bestRSSI);
-        AccessPointItem* netToConnect = nullptr;
-        for (auto& net : wifiList)
-        {
-            if (memcmp(net->bssid, bestAutoconnect->bssid, 6) == 0)
-            {
-                netToConnect = net;
-                break;
-            }
-        }
-        if (netToConnect)
-        {
-            currentAP = netToConnect;
-            connect(netToConnect, bestAutoconnect->pass, bestAutoconnect->autoconnect);
-        }
-    }
-}
-
 void WifiScreen::setBrightness(bool autoUpdate, uint8_t level)
 {
+    lock();
     if (autoUpdate)
     {
         lv_obj_add_state(brightnessSwitch, LV_STATE_CHECKED);
@@ -502,9 +398,10 @@ void WifiScreen::setBrightness(bool autoUpdate, uint8_t level)
     setBirghtnessSliderDisabled(autoUpdate);
 
     lv_slider_set_value(brightnessSlider, level, LV_ANIM_OFF);
-    char textLevel[10] = { 0 };
+    static char textLevel[10] = { 0 };
     snprintf(textLevel, 10, "%d%%", level);
     brightnessManualValueLabel.setText(textLevel);
+    unlock();
 }
 
 void WifiScreen::updateCurrentSSID(char* ssid, int8_t rssi)

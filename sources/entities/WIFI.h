@@ -29,19 +29,20 @@ public:
         void*     userData;
     };
     WIFI();
-    void         init();
-    bool         connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool autoconnect,
-                           bool waitForConnect = false);
-    bool         isConnected();
     static WIFI& instance()
     {
         static WIFI instance;
         return instance;
     }
+    void init();
+    bool connectAP(const char* ssid, uint8_t* bssid, const char* pass, bool autoconnect,
+                   bool waitForConnect = false);
+    bool isConnected();
     bool getCurrentAP(char* ssid, int8_t* rssi);
     bool disconnect();
     bool scan();
     bool getScannedAP(wifi_ap_record_t** AccessPoints, uint16_t* count);
+
     bool saveAP(const char* ssid, const uint8_t* bssid, const char* pass, bool autoconnect);
     bool eraseAP(const char* ssid, const uint8_t* bssid);
     bool getAP(const char* ssid, const uint8_t* bssid, char* pass, bool* autoconnect);

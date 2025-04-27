@@ -20,7 +20,7 @@ list(REMOVE_ITEM IMAGES_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/images/wifi_25.c"
 )
 
-idf_component_register(SRCS "main.cpp" ${USECASES_SRC} ${ADAPTERS_SRC} ${ENTITIES_SRC} ${IMAGES_SRC}
+idf_component_register(SRCS "main.cpp" ${USECASES_SRC} ${ADAPTERS_SRC} ${ENTITIES_SRC} ${IMAGES_SRC} 
                     REQUIRES spi_flash esp32_display_panel esp_timer lvgl esp_wifi esp_http_client json_parser nvs_flash lwip
                     INCLUDE_DIRS "." "usecases" "adapters" "entities")
 

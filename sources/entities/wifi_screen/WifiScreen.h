@@ -8,8 +8,13 @@
 #include "adapters/lvgl/SimpleLabel.h"
 #include "entities/WIFI.h"
 #include "entities/Weather.h"
+#ifdef COMMON_DEMO_APP
+#include "entities/ui/wifi_screen/WifiScreenHeader.h"
+#include "entities/ui/wifi_screen/elements/AccessPointItem.h"
+#else
 #include "entities/wifi_screen/WifiScreenHeader.h"
 #include "entities/wifi_screen/elements/AccessPointItem.h"
+#endif
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include "entities/Location.h"
@@ -71,7 +76,6 @@ class WifiScreen : public ScreenBase
 
     FlexContainer availableListContainer;
     SimpleLabel   availableLabel;
-    TimerHandle_t updateTimer;
     lv_obj_t*     textAreaPassword    = nullptr;
     lv_obj_t*     checkboxAutoconnect = nullptr;
     lv_obj_t*     keyboard            = nullptr;
@@ -87,13 +91,10 @@ class WifiScreen : public ScreenBase
     static constexpr char* brighnessHeaderString = "Brightness";
     static constexpr char* unitsHeaderString     = "Units";
 
-    static void updateTimerCallback(TimerHandle_t xTimer);
-
     static void disconnectButtonCallback(lv_event_t* e, void* context);
 
     static void wifiEventHandler(WIFI::Event event, void* context);
 
-    void        connect(AccessPointItem* net, char* password, bool autoconnect);
     void        setBirghtnessSliderDisabled(bool disabled);
     static void passwordKeyboardEventHandler();
     static void cityKeyboardEventHandler();
@@ -122,7 +123,6 @@ public:
 
     void updateCurrentSSID(char* newSSID, int8_t rssi);
 
-    void        updateWIFIList();
     void        setBrightness(bool autoUpdate, uint8_t level);
     static void connectButtonCallback(lv_event_t* e, void* context);
     static void keyboardEventCallback(lv_event_t* e);
@@ -130,4 +130,9 @@ public:
     static void brightnessSwitchCallback(lv_event_t* e);
     static void brightnessSliderCallback(lv_event_t* e);
     void        setUnits(Units::Temperature temperature, Units::Pressure pressure);
+    void        connect(AccessPointItem* net, char* password, bool autoconnect);
+    lv_obj_t*   getAvialableAPList()
+    {
+        return availableListContainer.get();
+    }
 };

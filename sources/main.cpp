@@ -8,6 +8,7 @@
 #include "entities/WIFI.h"
 #include "entities/Weather.h"
 #include "entities/Units.h"
+#include "usecases/AccessPointsUpdate.h"
 #include <sys/time.h>
 #include <time.h>
 
@@ -51,10 +52,11 @@ extern "C" void app_main(void)
     Units::instance().init();
     WifiScreen::instance().setUnits(Units::instance().getTemperature(),
                                     Units::instance().getPressure());
-    WifiScreen::instance().updateWIFIList();
 
     Weather::Data* forecast =
         static_cast<Weather::Data*>(heap_caps_calloc(40, sizeof(Weather::Data), MALLOC_CAP_SPIRAM));
+
+    UseCases::AccessPointsUpdate::instance().init();
     while (1)
     {
         if (!WIFI::instance().isConnected())
