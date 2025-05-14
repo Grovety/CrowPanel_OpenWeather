@@ -40,7 +40,7 @@ public:
         {
             time_t     timestampStruct = timestamp;
             struct tm* timeInfo        = localtime(&timestampStruct);
-            strftime(text, sizeof(text), "%m.%d.%y, %a", timeInfo);
+            strftime(text, sizeof(text), "%d.%m.%y, %a", timeInfo);
         } else
             text[0] = '\0';
         updateOnScreen();

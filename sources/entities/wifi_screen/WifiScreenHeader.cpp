@@ -1,10 +1,15 @@
 #include "WifiScreenHeader.h"
+#ifdef COMMON_DEMO_APP
+#include "entities/ui/weather_screen/WeatherScreen.h"
+#else
 #include "entities/weather_screen/WeatherScreen.h"
+#endif
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
 LV_IMG_DECLARE(wifi_50);
 LV_IMG_DECLARE(wifi_25);
+
 LV_IMG_DECLARE(back_icon);
 void WifiScreenHeader::configButtonCallback(lv_event_t* e, void* context)
 {
@@ -73,7 +78,6 @@ void WifiScreenHeader::create(lv_obj_t* parent)
             backIcon.align(LV_ALIGN_TOP_RIGHT);
         }
     }
-    ESP_LOGI(Tag, "header created");
 }
 
 void WifiScreenHeader::updateRSSI(int8_t rssi)

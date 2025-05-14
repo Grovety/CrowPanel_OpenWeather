@@ -25,7 +25,7 @@ void AccessPointsUpdate::task(void* arg)
         if (WIFI::instance().isConnected())
         {
             WIFI::instance().getCurrentAP(ssid, &rssi);
-            screen.updateCurrentSSID(ssid, rssi);
+            screen.wifiConnectionBlock->updateCurrentSSID(ssid, rssi);
         }
         wifi_ap_record_t* ap_records;
         uint16_t          ap_num;
@@ -69,7 +69,7 @@ void AccessPointsUpdate::task(void* arg)
                     continue;
                 usecase->wifiList.emplace_back(net);
                 lvgl_port_lock(-1);
-                net->show(WifiScreen::instance().getAvialableAPList());
+                net->show(WifiScreen::instance().getAvailableWIFIList());
                 lvgl_port_unlock();
                 ESP_LOGI(Tag, "%s(BSSID: %02x:%02x:%02x:%02x:%02x:%02x), rssi - %d", net->ssid,
                          net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],

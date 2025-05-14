@@ -4,9 +4,15 @@
 #include "adapters/lvgl/FlexContainer.h"
 #include "adapters/lvgl/Image.h"
 #include "adapters/lvgl/SimpleLabel.h"
+#ifdef COMMON_DEMO_APP
+#include "entities/ui/weather_screen/elements/LocationLabel.h"
+#include "entities/ui/weather_screen/elements/TimeZoneLabel.h"
+#include "entities/ui/weather_screen/elements/WifiLabel.h"
+#else
 #include "entities/weather_screen/elements/LocationLabel.h"
 #include "entities/weather_screen/elements/TimeZoneLabel.h"
 #include "entities/weather_screen/elements/WifiLabel.h"
+#endif
 #include <esp_log.h>
 
 class WifiScreenHeader

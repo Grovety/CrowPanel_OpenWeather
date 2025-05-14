@@ -1,5 +1,9 @@
 #include "AccessPointItem.h"
+#ifdef COMMON_DEMO_APP
+#include "entities/ui/wifi_screen/WifiScreen.h"
+#else
 #include "entities/wifi_screen/WifiScreen.h"
+#endif
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
@@ -11,7 +15,7 @@ void AccessPointItem::show(lv_obj_t* parent)
 {
     // connect button
     button.create(parent, this);
-    button.setEventCallback(WifiScreen::connectButtonCallback);
+    button.setEventCallback(WifiScreen::instance().wifiConnectionBlock->connectButtonCallback);
     lv_obj_set_size(button.get(), LV_PCT(100), LV_SIZE_CONTENT);
     buttonContainer.create(button.get(), LV_PCT(100), LV_SIZE_CONTENT, LV_FLEX_FLOW_COLUMN);
     buttonContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
@@ -25,7 +29,7 @@ void AccessPointItem::show(lv_obj_t* parent)
             icon.create(itemContainer.get());
             setIcon(rssi);
             // // wifi label
-            label.create(itemContainer.get(), &lv_font_montserrat_20);
+            label.create(itemContainer.get(), &lv_font_montserrat_14);
             label.align(LV_ALIGN_TOP_LEFT);
             label.setText(ssid);
             lv_obj_clear_flag(buttonContainer.get(), LV_OBJ_FLAG_CLICKABLE);

@@ -63,7 +63,7 @@ extern "C" void app_main(void)
         {
             connected = false;
             WeatherScreen::instance().setSSID(NULL);
-            WifiScreen::instance().setSSID(NULL);
+            WifiScreen::instance().setSSID(NULL, 0);
             WIFI::instance().waitForConnection();
             continue;
         }
@@ -90,7 +90,7 @@ extern "C" void app_main(void)
         WIFI::instance().getCurrentAP(ssid, &rssi);
         WeatherScreen::instance().updateRSSI(rssi);
         WeatherScreen::instance().setSSID(ssid);
-        WifiScreen::instance().setSSID(ssid);
+        WifiScreen::instance().setSSID(ssid, rssi);
         static Weather::Data weatherInfo = { 0 };
         if (Weather::instance().getCurrentWeather(&weatherInfo) &&
             Weather::instance().getForecast(forecast))

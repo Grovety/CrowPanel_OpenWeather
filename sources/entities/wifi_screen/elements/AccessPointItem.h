@@ -1,10 +1,10 @@
 #pragma once
 
+#include "adapters/lvgl/Button.h"
 #include "adapters/lvgl/FlexContainer.h"
 #include "adapters/lvgl/Image.h"
 #include "adapters/lvgl/SimpleLabel.h"
 #include "adapters/lvgl/lvgl_port_v8.h"
-#include "adapters/lvgl/Button.h"
 #include "entities/WIFI.h"
 
 struct AccessPointItem {
