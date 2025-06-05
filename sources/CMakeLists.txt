@@ -21,8 +21,9 @@ list(REMOVE_ITEM IMAGES_SRC
 )
 
 idf_component_register(SRCS "main.cpp" ${USECASES_SRC} ${ADAPTERS_SRC} ${ENTITIES_SRC} ${IMAGES_SRC} 
-                    REQUIRES spi_flash esp32_display_panel esp_timer lvgl esp_wifi esp_http_client json_parser nvs_flash lwip
-                    INCLUDE_DIRS "." "usecases" "adapters" "entities")
+                    REQUIRES spi_flash esp32_display_panel esp_timer lvgl esp_wifi esp_http_client json_parser nvs_flash lwip esp_http_server mbedtls
+                    INCLUDE_DIRS "." "usecases" "adapters" "entities"
+                    EMBED_TXTFILES "root_cert.pem")
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-missing-field-initializers)
 # The following code is to avoid the error:

@@ -131,6 +131,6 @@ void AccessPointsUpdate::task(void* arg)
                 lvgl_port_unlock();
             }
         }
-        vTaskDelayUntil(&xLastWakeTime, UpdatePersiodMs / portTICK_PERIOD_MS);
+        vTaskDelayUntil(&xLastWakeTime, UpdatePeriodMs / portTICK_PERIOD_MS);
     }
 }

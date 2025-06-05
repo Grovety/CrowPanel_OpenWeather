@@ -9,8 +9,11 @@
 #include "entities/Weather.h"
 #include "entities/Units.h"
 #include "usecases/AccessPointsUpdate.h"
+#include "usecases/LoadWeather.h"
 #include <sys/time.h>
 #include <time.h>
+#include "WavRecorder.h"
+#include "HttpServer.h"
 
 using namespace esp_panel::drivers;
 using namespace esp_panel::board;
@@ -27,9 +30,8 @@ extern "C" void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    Board*      board        = new Board();
-    static bool connected    = false;
-    time_t      curTimestamp = 0;
+    Board*      board     = new Board();
+    static bool connected = false;
     assert(board);
 
     ESP_UTILS_CHECK_FALSE_EXIT(board->init(), "Board init failed");
@@ -52,10 +54,6 @@ extern "C" void app_main(void)
     Units::instance().init();
     WifiScreen::instance().setUnits(Units::instance().getTemperature(),
                                     Units::instance().getPressure());
-
-    Weather::Data* forecast =
-        static_cast<Weather::Data*>(heap_caps_calloc(40, sizeof(Weather::Data), MALLOC_CAP_SPIRAM));
-
     UseCases::AccessPointsUpdate::instance().init();
     while (1)
     {
@@ -80,33 +78,11 @@ extern "C" void app_main(void)
                 ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
             }
         }
-        connected               = true;
-        Location::Data location = { 0 };
-        Location::instance().get(location);
-        Weather::instance().setLocation(location.latitude, location.longitude,
-                                        location.locationName);
-        char   ssid[MAX_SSID_LEN + 1];
-        int8_t rssi;
-        WIFI::instance().getCurrentAP(ssid, &rssi);
-        WeatherScreen::instance().updateRSSI(rssi);
-        WeatherScreen::instance().setSSID(ssid);
-        WifiScreen::instance().setSSID(ssid, rssi);
-        static Weather::Data weatherInfo = { 0 };
-        if (Weather::instance().getCurrentWeather(&weatherInfo) &&
-            Weather::instance().getForecast(forecast))
-        {
-            if (CurrentTime::instance().isTimeSet())
-            {
-                time(&curTimestamp);
-                weatherInfo.timestamp = curTimestamp + weatherInfo.timestampOffset;
-            }
-            CurrentTime::instance().setTimezoneOffset(weatherInfo.timestampOffset);
-            WeatherScreen::instance().setCurrentWeather(weatherInfo);
-            WifiScreen::instance().setLocation(weatherInfo);
-            WeatherScreen::instance().setForecast(forecast);
-            Brightness::instance().update(CurrentTime::instance().isTimeSet() ? true : false);
-            vTaskDelay(10000);
-        }
+        connected = true;
+        UseCases::LoadWeather::instance().perform();
+        Brightness::instance().update(CurrentTime::instance().isTimeSet() ? true : false);
+        UseCases::LoadWeather::instance().timeout(10);
+
         ESP_LOGI(TAG, "MALLOC_CAP_8BIT = %d", heap_caps_get_free_size(MALLOC_CAP_8BIT));
         ESP_LOGI(TAG, "MALLOC_CAP_SPIRAM = %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
         ESP_LOGI(TAG, "MALLOC_CAP_INTERNAL = %d",

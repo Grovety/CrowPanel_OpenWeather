@@ -124,10 +124,8 @@ public:
                 const_cast<char*>(Units::instance().getTemperatureString()));
             nightTempLabel[i].setParam(Units::instance().convertTemp(forecast[idx + 8].temperature),
                                        true);
-            ESP_LOGI(Tag, "[%d]day - %d, night - %d", i, (int)forecast[idx + 8].temperature,
+            ESP_LOGD(Tag, "[%d]day - %d, night - %d", i, (int)forecast[idx + 8].temperature,
                      (int)forecast[idx + 8].temperature);
         }
-
-        ESP_LOGI(Tag, "container height - %d", lv_obj_get_content_height(objContainer.get()));
     }
 };
