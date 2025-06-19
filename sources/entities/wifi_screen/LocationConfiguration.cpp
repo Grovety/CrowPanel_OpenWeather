@@ -196,7 +196,7 @@ bool LocationConfiguration::textareaCallback(lv_event_t* e)
     return retVal;
 }
 
-lv_obj_t* const LocationConfiguration::getCityTextarea()
+lv_obj_t* LocationConfiguration::getCityTextarea()
 {
-    return const_cast<lv_obj_t* const>(textArea);
+    return textArea;
 }

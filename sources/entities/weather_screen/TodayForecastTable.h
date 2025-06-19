@@ -10,13 +10,13 @@
 
 class TodayForecastTable
 {
-    static constexpr char*   Tag                        = "TodayTable";
-    static constexpr uint8_t TodayWeatherForecastsCount = 4;
-    FlexContainer            mainContainer;
-    FlexContainer            forecastContainer[TodayWeatherForecastsCount];
-    WeatherIcon              forecastIcon[TodayWeatherForecastsCount];
-    SmallTimestampLabel      timestampForecastLabel[TodayWeatherForecastsCount];
-    ParameterLabel           tempSmallLabel[TodayWeatherForecastsCount];
+    static constexpr const char* Tag                        = "TodayTable";
+    static constexpr uint8_t     TodayWeatherForecastsCount = 4;
+    FlexContainer                mainContainer;
+    FlexContainer                forecastContainer[TodayWeatherForecastsCount];
+    WeatherIcon                  forecastIcon[TodayWeatherForecastsCount];
+    SmallTimestampLabel          timestampForecastLabel[TodayWeatherForecastsCount];
+    ParameterLabel               tempSmallLabel[TodayWeatherForecastsCount];
 
 public:
     void create(lv_obj_t* parent)
@@ -56,8 +56,7 @@ public:
         for (uint8_t i = 0; i < 4; i++)
         {
             timestampForecastLabel[i].set(data[i].timestamp);
-            tempSmallLabel[i].setPostfix(
-                const_cast<char*>(Units::instance().getTemperatureString()));
+            tempSmallLabel[i].setPostfix(Units::instance().getTemperatureString());
             tempSmallLabel[i].setParam(Units::instance().convertTemp(data[i].temperature), true);
             forecastIcon[i].set(data[i].icon);
         }

@@ -37,10 +37,10 @@ class Header
         Success,
         Error
     };
-    MicState               micState = Normal;
-    Button                 configButton;
-    static constexpr char* Tag = "Header";
-    static void            configButtonCallback(lv_event_t* e, void* context)
+    MicState                     micState = Normal;
+    Button                       configButton;
+    static constexpr const char* Tag = "Header";
+    static void                  configButtonCallback(lv_event_t* e, void* context)
     {
         if (lv_event_get_code(e) == LV_EVENT_CLICKED)
         {
@@ -112,7 +112,7 @@ class Header
                     }
                     lv_obj_refresh_style(button, LV_PART_MAIN, LV_STYLE_PROP_ANY);
 
-                    lv_timer_t* resetTimer = lv_timer_create(
+                    lv_timer_create(
                         +[](lv_timer_t* rt) {
                             Header* h = static_cast<Header*>(rt->user_data);
                             if (h->micState == Success || h->micState == Error)

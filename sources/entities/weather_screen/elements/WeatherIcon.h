@@ -24,7 +24,7 @@ LV_IMG_DECLARE(icon_50n);
 class WeatherIcon : public Image
 {
 public:
-    void set(char* iconStr)
+    void set(const char* iconStr)
     {
         if (!iconStr || !image)
             return;

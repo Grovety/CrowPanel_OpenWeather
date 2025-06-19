@@ -8,7 +8,7 @@
 
 class LocationConfiguration
 {
-    static constexpr char* TAG = "LocationConfig";
+    static constexpr const char* TAG = "LocationConfig";
 
     FlexContainer spacer;
     MenuPage      page;
@@ -20,9 +20,9 @@ class LocationConfiguration
     char          cityText[Location::MaxCityNameLength]{};
 
 public:
-    void            create(Menu& menu, lv_obj_t** keyboard_ptr);
-    void            updateCity();
-    void            keyboardHandler();
-    static bool     textareaCallback(lv_event_t* e);
-    lv_obj_t* const getCityTextarea();
+    void        create(Menu& menu, lv_obj_t** keyboard_ptr);
+    void        updateCity();
+    void        keyboardHandler();
+    static bool textareaCallback(lv_event_t* e);
+    lv_obj_t*   getCityTextarea();
 };

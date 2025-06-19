@@ -14,15 +14,15 @@
 
 class UnitsBlock
 {
-    static constexpr char* Tag = "UnitsBlock";
-    MenuPage               page;
-    FlexContainer          spacer;
-    FlexContainer          temperatureUnitsEntryContainer;
-    SimpleLabel            temperatureUnitsEntryLabel;
-    lv_obj_t*              temperatureDropDown = nullptr;
-    FlexContainer          pressureUnitsEntryContainer;
-    SimpleLabel            pressureUnitsEntryLabel;
-    lv_obj_t*              pressureDropDown = nullptr;
+    static constexpr const char* Tag = "UnitsBlock";
+    MenuPage                     page;
+    FlexContainer                spacer;
+    FlexContainer                temperatureUnitsEntryContainer;
+    SimpleLabel                  temperatureUnitsEntryLabel;
+    lv_obj_t*                    temperatureDropDown = nullptr;
+    FlexContainer                pressureUnitsEntryContainer;
+    SimpleLabel                  pressureUnitsEntryLabel;
+    lv_obj_t*                    pressureDropDown = nullptr;
 
     void unitsConfigurationHandler(lv_event_t*);
 #ifdef COMMON_DEMO_APP

@@ -52,6 +52,11 @@ protected:
             unlock();
     }
 
+    void appendText(const char* newText, bool updateOnScreen)
+    {
+        appendText(const_cast<char*>(newText), updateOnScreen);
+    }
+
     void appendText(char* newText, bool updateOnScreen)
     {
         if (!label || !newText)

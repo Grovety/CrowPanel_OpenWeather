@@ -28,7 +28,7 @@ void SetCityViaVoice::VoiceRecordingTask(void* param)
     {
         xSemaphoreTake(self->sema, (seconds * 1000) / portTICK_PERIOD_MS);
         recorder.stop();
-        ESP_LOGI(Tag, "WAV записан (%u байт)", recorder.getSize());
+        ESP_LOGI(Tag, "WAV recored (%u bytes)", recorder.getSize());
         if (recognizer.recognizeCity(recorder, location.locationName, Location::MaxCityNameLength))
         {
             UseCases::LoadWeather::instance().setTemporaryLocation(
@@ -42,7 +42,7 @@ void SetCityViaVoice::VoiceRecordingTask(void* param)
         }
     } else
     {
-        ESP_LOGE(Tag, "Ошибка записи");
+        ESP_LOGE(Tag, "Record failed");
         self->result = false;
     }
 

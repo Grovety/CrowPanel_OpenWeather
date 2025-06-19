@@ -37,10 +37,10 @@ bool I2SMicrophone::init()
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
             I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
-            .mclk = GPIO_NUM_NC,      // без внешней синхры
+            .mclk = GPIO_NUM_NC,
             .bclk = MIC_BCLK_PIN,
             .ws   = MIC_WS_PIN,
-            .dout = GPIO_NUM_NC,      // только RX
+            .dout = GPIO_NUM_NC,
             .din  = MIC_DATA_IN_PIN,
         },
     };

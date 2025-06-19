@@ -26,13 +26,13 @@ public:
         unlock();
     }
 
-    void setPrefix(char* newPrefix)
+    void setPrefix(const char* newPrefix)
     {
         if (newPrefix)
             strncpy(prefix, newPrefix, PrefixLen);
     }
 
-    void setPostfix(char* newPostfix)
+    void setPostfix(const char* newPostfix)
     {
         if (newPostfix)
             strncpy(postfix, newPostfix, PostfixLen);

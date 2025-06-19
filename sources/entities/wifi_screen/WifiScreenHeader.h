@@ -17,19 +17,19 @@
 
 class WifiScreenHeader
 {
-    WifiLabel              wifiLabel;
-    LocationLabel          location;
-    TimeZoneLabel          timeLabel;
-    TimeZoneLabel          dateLabel;
-    FlexContainer          header;
-    FlexContainer          wifiInfoContainer;
-    FlexContainer          locationContainer;
-    FlexContainer          configButtonContainer;
-    Image                  backIcon;
-    Image                  wifiIcon;
-    Button                 button;
-    static constexpr char* Tag = "wifiScreenHeader";
-    static void            configButtonCallback(lv_event_t* e, void* context);
+    WifiLabel                    wifiLabel;
+    LocationLabel                location;
+    TimeZoneLabel                timeLabel;
+    TimeZoneLabel                dateLabel;
+    FlexContainer                header;
+    FlexContainer                wifiInfoContainer;
+    FlexContainer                locationContainer;
+    FlexContainer                configButtonContainer;
+    Image                        backIcon;
+    Image                        wifiIcon;
+    Button                       button;
+    static constexpr const char* Tag = "wifiScreenHeader";
+    static void                  configButtonCallback(lv_event_t* e, void* context);
 
 public:
     void create(lv_obj_t* parent);

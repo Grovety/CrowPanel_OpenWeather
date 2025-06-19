@@ -13,7 +13,7 @@
 void UnitsBlock::create(Menu& menu, SensorSettings* sensor_settings)
 {
     page.create(menu, "Units");
-    lv_obj_t* item = page.createSidebarItem("Units");
+    page.createSidebarItem("Units");
     {
         /// Spacer.
         spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);
@@ -171,7 +171,7 @@ void UnitsBlock::saveSettings()
 void UnitsBlock::create(Menu& menu)
 {
     page.create(menu, "Units");
-    lv_obj_t* item = page.createSidebarItem("Units");
+    page.createSidebarItem("Units");
     {
         /// Spacer.
         spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);

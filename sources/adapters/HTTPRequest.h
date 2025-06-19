@@ -14,13 +14,11 @@ class HTTPRequest
     static constexpr char Tag[] = "http-request";
 
     EventGroupHandle_t       eventGroup;
+    esp_http_client_config_t config;
     char*                    buffer      = nullptr;
     uint32_t                 bufferLen   = 0;
     uint32_t                 receivedLen = 0;
-    const char*              url         = nullptr;
-    esp_http_client_method_t method;
 
-    // Дополнительные поля:
     const uint8_t* body        = nullptr;
     size_t         bodySize    = 0;
     const char*    contentType = nullptr;
@@ -34,14 +32,13 @@ class HTTPRequest
         case HTTP_EVENT_ON_DATA:
             if (request->bufferLen < (request->receivedLen + evt->data_len))
             {
-                ESP_LOGE(Tag, "not enough space");
+                ESP_LOGE(Tag, "Not enough space");
                 break;
             }
             memcpy(request->buffer + request->receivedLen, evt->data, evt->data_len);
             request->receivedLen += evt->data_len;
             break;
         case HTTP_EVENT_ON_FINISH:
-            // ESP_LOGI(Tag, "Received data (%lu): %s", request->receivedLen, request->buffer);
             xEventGroupSetBits(request->eventGroup, 0x01);
             break;
         default:
@@ -51,15 +48,84 @@ class HTTPRequest
     }
 
 public:
-    HTTPRequest(const char* _url, esp_http_client_method_t _method, char* _buffer,
-                uint32_t _bufferLen, const uint8_t* _body = nullptr, size_t _bodySize = 0,
-                const char* _contentType = nullptr, const char* _authHeader = nullptr)
-        : buffer{ _buffer }, bufferLen{ _bufferLen }, url{ _url }, method{ _method }, body{ _body },
-          bodySize{ _bodySize }, contentType{ _contentType }, authHeader{ _authHeader }
+    class Builder
     {
-        eventGroup = xEventGroupCreate();
+        esp_http_client_config_t config      = { 0 };
+        char*                    buffer      = nullptr;
+        uint32_t                 bufferLen   = 0;
+        const uint8_t*           body        = nullptr;
+        size_t                   bodySize    = 0;
+        const char*              contentType = nullptr;
+        const char*              authHeader  = nullptr;
+
+    public:
+        Builder& setUrl(const char* url)
+        {
+            config.url = url;
+            return *this;
+        }
+
+        Builder& setHost(const char* host, int port, const char* path)
+        {
+            config.host = host;
+            config.port = port;
+            config.path = path;
+            return *this;
+        }
+
+        Builder& setMethod(esp_http_client_method_t method)
+        {
+            config.method = method;
+            return *this;
+        }
+
+        Builder& setBuffer(char* _buffer, uint32_t _bufferLen)
+        {
+            buffer    = _buffer;
+            bufferLen = _bufferLen;
+            return *this;
+        }
+
+        Builder& setSSL(esp_err_t (*crtBundleAttach)(void*))
+        {
+            config.transport_type    = HTTP_TRANSPORT_OVER_SSL;
+            config.crt_bundle_attach = crtBundleAttach;
+            return *this;
+        }
+
+        Builder& setBody(const uint8_t* _body, size_t _bodySize, const char* _contentType)
+        {
+            body        = _body;
+            bodySize    = _bodySize;
+            contentType = _contentType;
+            return *this;
+        }
+
+        Builder& setAuthHeader(const char* _authHeader)
+        {
+            authHeader = _authHeader;
+            return *this;
+        }
+
+        HTTPRequest build()
+        {
+            return HTTPRequest(config, buffer, bufferLen, body, bodySize, contentType, authHeader);
+        }
+    };
+
+private:
+    HTTPRequest(const esp_http_client_config_t& cfg, char* buf, uint32_t bufLen,
+                const uint8_t* _body, size_t _bodySize, const char* _contentType,
+                const char* _authHeader)
+        : config(cfg), buffer(buf), bufferLen(bufLen), body(_body), bodySize(_bodySize),
+          contentType(_contentType), authHeader(_authHeader)
+    {
+        eventGroup           = xEventGroupCreate();
+        config.event_handler = httpEventHandler;
+        config.user_data     = this;
     }
 
+public:
     ~HTTPRequest()
     {
         vEventGroupDelete(eventGroup);
@@ -67,32 +133,6 @@ public:
 
     esp_err_t perform()
     {
-        if (!url)
-            return ESP_FAIL;
-
-        extern const uint8_t wit_root_ca_pem_start[] asm("_binary_root_cert_pem_start");
-
-        esp_http_client_config_t config = { 0 };
-        if (strstr(url, "wit.ai"))
-        {
-            config.host           = "api.wit.ai";
-            config.port           = 443;
-            config.path           = "/speech?v=20240520";
-            config.transport_type = HTTP_TRANSPORT_OVER_SSL;
-
-            // config.cert_pem        = reinterpret_cast<const char*>(wit_root_ca_pem_start);
-            config.method            = method;
-            config.event_handler     = httpEventHandler;
-            config.user_data         = this;
-            config.crt_bundle_attach = esp_crt_bundle_attach;
-        } else
-        {
-            config.url           = url;
-            config.method        = method;
-            config.event_handler = httpEventHandler;
-            config.user_data     = this;
-        }
-
         receivedLen = 0;
         if (buffer && bufferLen > 0)
             buffer[0] = '\0';
@@ -113,7 +153,7 @@ public:
         if (body && bodySize > 0)
             esp_http_client_set_post_field(client, reinterpret_cast<const char*>(body), bodySize);
 
-        ESP_LOGI(Tag, "Starting request to %s", url);
+        ESP_LOGI(Tag, "Starting request");
 
         esp_err_t err = esp_http_client_perform(client);
 

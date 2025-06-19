@@ -12,7 +12,7 @@ class I2SMicrophone
     static constexpr int dmaDescNum  = 8;
     static constexpr int dmaFrameNum = 160;
 
-    static constexpr int bitsPerSample  = 32; // INMP441 всегда 24/32-бит
+    static constexpr int bitsPerSample  = 32;
     static constexpr int bytesPerSample = bitsPerSample / 8;
 
     void cleanup();

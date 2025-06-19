@@ -32,7 +32,7 @@ public:
         unlock();
     }
 
-    void set(char* str)
+    void set(const char* str)
     {
         if (!str)
             return;

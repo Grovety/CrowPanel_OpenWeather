@@ -26,8 +26,11 @@ bool Location::get(Location::Data& data)
         }
     }
 
-    HTTPRequest request(const_cast<char*>(GetLocationURL), HTTP_METHOD_GET, locationResponseBuffer,
-                        sizeof(locationResponseBuffer));
+    HTTPRequest request = HTTPRequest::Builder()
+                              .setUrl(GetLocationURL)
+                              .setMethod(HTTP_METHOD_GET)
+                              .setBuffer(locationResponseBuffer, sizeof(locationResponseBuffer))
+                              .build();
 
     jparse_ctx_t jctx;
     uint32_t     receivedLen;

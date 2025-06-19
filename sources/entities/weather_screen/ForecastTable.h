@@ -9,23 +9,23 @@
 
 class ForecastTable
 {
-    static constexpr char*   Tag           = "ForecastTable";
-    static constexpr uint8_t ForecastCount = 4;
-    FlexContainer            objContainer;
-    FlexContainer            spacerContainer;
-    FlexContainer            headerContainer;
-    DayLabel                 headerLabel;
-    FlexContainer            mainContainer;
-    FlexContainer            forecastContainer[ForecastCount];
-    FlexContainer            dateContainer[ForecastCount];
-    DayLabel                 dayNameLabel[ForecastCount];
-    FlexContainer            weatherContainer[ForecastCount];
-    FlexContainer            iconContainer[ForecastCount];
-    WeatherIcon              icon[ForecastCount];
-    FlexContainer            dayContainer[ForecastCount];
-    ParameterLabel           dayTempLabel[ForecastCount];
-    FlexContainer            nightContainer[ForecastCount];
-    ParameterLabel           nightTempLabel[ForecastCount];
+    static constexpr const char* Tag           = "ForecastTable";
+    static constexpr uint8_t     ForecastCount = 4;
+    FlexContainer                objContainer;
+    FlexContainer                spacerContainer;
+    FlexContainer                headerContainer;
+    DayLabel                     headerLabel;
+    FlexContainer                mainContainer;
+    FlexContainer                forecastContainer[ForecastCount];
+    FlexContainer                dateContainer[ForecastCount];
+    DayLabel                     dayNameLabel[ForecastCount];
+    FlexContainer                weatherContainer[ForecastCount];
+    FlexContainer                iconContainer[ForecastCount];
+    WeatherIcon                  icon[ForecastCount];
+    FlexContainer                dayContainer[ForecastCount];
+    ParameterLabel               dayTempLabel[ForecastCount];
+    FlexContainer                nightContainer[ForecastCount];
+    ParameterLabel               nightTempLabel[ForecastCount];
 
 public:
     void create(lv_obj_t* parent)
@@ -117,11 +117,10 @@ public:
             dayNameLabel[i].set(forecast[idx + 4].timestamp);
             icon[i].set(forecast[idx + 4].icon);
 
-            dayTempLabel[i].setPostfix(const_cast<char*>(Units::instance().getTemperatureString()));
+            dayTempLabel[i].setPostfix(Units::instance().getTemperatureString());
             dayTempLabel[i].setParam(Units::instance().convertTemp(forecast[idx + 4].temperature),
                                      true);
-            nightTempLabel[i].setPostfix(
-                const_cast<char*>(Units::instance().getTemperatureString()));
+            nightTempLabel[i].setPostfix(Units::instance().getTemperatureString());
             nightTempLabel[i].setParam(Units::instance().convertTemp(forecast[idx + 8].temperature),
                                        true);
             ESP_LOGD(Tag, "[%d]day - %d, night - %d", i, (int)forecast[idx + 8].temperature,

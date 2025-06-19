@@ -79,9 +79,12 @@ extern "C" void app_main(void)
             }
         }
         connected = true;
-        UseCases::LoadWeather::instance().perform();
-        Brightness::instance().update(CurrentTime::instance().isTimeSet() ? true : false);
-        UseCases::LoadWeather::instance().timeout(10);
+        if (UseCases::LoadWeather::instance().perform())
+        {
+            Brightness::instance().update(CurrentTime::instance().isTimeSet() ? true : false);
+            UseCases::LoadWeather::instance().timeout(10);
+        } else
+            vTaskDelay(1000);
 
         ESP_LOGI(TAG, "MALLOC_CAP_8BIT = %d", heap_caps_get_free_size(MALLOC_CAP_8BIT));
         ESP_LOGI(TAG, "MALLOC_CAP_SPIRAM = %d", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));

@@ -46,7 +46,7 @@ void WifiScreen::create(lv_obj_t* screen_)
         ui->menu.setSize(lv_pct(100), lv_pct(100));
 
         // Root page ((sidebar) left part on screen).
-        ui->menu.createRootPage("Settings");
+        ui->menu.createRootPage("");
         // menu.createRootPage(nullptr);
 
 #ifdef COMMON_DEMO_APP

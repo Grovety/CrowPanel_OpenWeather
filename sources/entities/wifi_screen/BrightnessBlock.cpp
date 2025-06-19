@@ -51,8 +51,8 @@ void BrightnessBlock::create(Menu& menu)
             lv_style_set_opa(&brightnessSliderStyle, LV_OPA_50);
             lv_style_set_bg_color(&brightnessSliderStyle, lv_color_hex(0xAAAAAA));
             lv_style_set_border_color(&brightnessSliderStyle, lv_color_hex(0xCCCCCC));
-            lv_obj_add_style(brightnessSlider, &brightnessSliderStyle,
-                             LV_PART_MAIN | LV_STATE_DISABLED);
+            lv_obj_add_style(brightnessSlider, &brightnessSliderStyle, LV_PART_MAIN);
+            lv_obj_clear_state(brightnessSlider, LV_STATE_DISABLED);
 
             /// get default.
             /// set default.

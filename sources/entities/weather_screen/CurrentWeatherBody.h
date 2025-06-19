@@ -15,8 +15,8 @@ LV_IMG_DECLARE(sunset_icon);
 
 class CurrentWeatherBody
 {
-    static constexpr char*   Tag                           = "CurrentWeatherBody";
-    static constexpr uint8_t CurrentWeatherParametersCount = 3;
+    static constexpr const char* Tag                           = "CurrentWeatherBody";
+    static constexpr uint8_t     CurrentWeatherParametersCount = 3;
     enum CurrentWeatuerParams
     {
         WIND = 0,
@@ -45,7 +45,7 @@ class CurrentWeatherBody
     const lv_img_dsc_t* parameterIconsSrc[CurrentWeatherParametersCount]  = { &wind_icon,
                                                                               &pressure_icon,
                                                                               &humidity_icon };
-    char*               parameterPostfixes[CurrentWeatherParametersCount] = { WIND_SPEED_POSTFIX,
+    const char*         parameterPostfixes[CurrentWeatherParametersCount] = { WIND_SPEED_POSTFIX,
                                                                               PRESSURE_POSTFIX,
                                                                               HUMIDITY_POSTFIX };
 
@@ -159,7 +159,7 @@ public:
 
     void setTemperature(float temp)
     {
-        temperatureLabel.setPostfix(const_cast<char*>(Units::instance().getTemperatureString()));
+        temperatureLabel.setPostfix(Units::instance().getTemperatureString());
         temperatureLabel.setParam(Units::instance().convertTemp(temp), true);
     }
     void setDescription(char* description)
@@ -168,7 +168,7 @@ public:
     }
     void setFeelsLikeTemp(float temp)
     {
-        feelsLikeLabel.setPostfix(const_cast<char*>(Units::instance().getTemperatureString()));
+        feelsLikeLabel.setPostfix(Units::instance().getTemperatureString());
         feelsLikeLabel.setParam(Units::instance().convertTemp(temp), true);
     }
     void setIcon(char* iconStr)
@@ -179,8 +179,7 @@ public:
     void setCurrentParams(Weather::Data& data)
     {
         parameterLabels[WIND].setParam(data.windSpeed);
-        parameterLabels[PRESSURE].setPostfix(
-            const_cast<char*>(Units::instance().getPressureString()));
+        parameterLabels[PRESSURE].setPostfix(Units::instance().getPressureString());
         parameterLabels[PRESSURE].setParam(Units::instance().convertPressure(data.pressure));
         parameterLabels[HUMIDITY].setParam(data.humidity);
 

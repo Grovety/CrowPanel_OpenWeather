@@ -41,7 +41,7 @@ class WifiConnection
 
     AccessPointItem* currentAP;
 
-    static constexpr char* Tag = "WifiConnection";
+    static constexpr const char* Tag = "WifiConnection";
 
     static void disconnectButtonCallback(lv_event_t* e, void* context);
     static void wifiEventHandler(WIFI::Event event, void* context);

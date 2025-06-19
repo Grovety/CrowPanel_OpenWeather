@@ -4,8 +4,8 @@
 
 class Location
 {
-    static constexpr char* Tag = "Location";
-    char                   locationResponseBuffer[2048];
+    static constexpr const char* Tag = "Location";
+    char                         locationResponseBuffer[2048];
 
 public:
     static constexpr uint8_t MaxCityNameLength = 150;

@@ -57,8 +57,12 @@ bool Weather::getCurrentWeather(Data* data)
         return false;
     }
 
-    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_POST, ctx_->openWeatherDataBuffer,
-                        sizeof(ctx_->openWeatherDataBuffer));
+    HTTPRequest request =
+        HTTPRequest::Builder()
+            .setUrl(ctx_->requestURL)
+            .setMethod(HTTP_METHOD_POST)
+            .setBuffer(ctx_->openWeatherDataBuffer, sizeof(ctx_->openWeatherDataBuffer))
+            .build();
 
     jparse_ctx_t jctx;
     int          numCnt = 0;
@@ -115,6 +119,7 @@ bool Weather::getCurrentWeather(Data* data)
     data->feelsLike -= 273.15f;
     return retVal;
 }
+
 bool Weather::getForecast(Data* data)
 {
     if (!data)
@@ -138,8 +143,12 @@ bool Weather::getForecast(Data* data)
         return false;
     }
 
-    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_POST, ctx_->openWeatherDataBuffer,
-                        sizeof(ctx_->openWeatherDataBuffer));
+    HTTPRequest request =
+        HTTPRequest::Builder()
+            .setUrl(ctx_->requestURL)
+            .setMethod(HTTP_METHOD_POST)
+            .setBuffer(ctx_->openWeatherDataBuffer, sizeof(ctx_->openWeatherDataBuffer))
+            .build();
 
     jparse_ctx_t jctx;
     int          numCnt = 0;
@@ -270,7 +279,11 @@ bool Weather::checkLocation(char* name)
              WEATHER_API_KEY);
     free(encodedCity);
 
-    HTTPRequest request(requestBuffer, HTTP_METHOD_POST, responseBuffer, ResponseBufferSize);
+    HTTPRequest request = HTTPRequest::Builder()
+                              .setUrl(requestBuffer)
+                              .setMethod(HTTP_METHOD_POST)
+                              .setBuffer(responseBuffer, ResponseBufferSize)
+                              .build();
 
     jparse_ctx_t jctx;
     uint32_t     receivedLen;

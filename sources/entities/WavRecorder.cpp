@@ -6,15 +6,13 @@
 #include <esp_log.h>
 #include <string.h>
 
-static constexpr char* Tag = "WavRecorder";
-
 WavRecorder::WavRecorder()
 {
 }
 
 WavRecorder::~WavRecorder()
 {
-    stop(); // убедимся, что таск завершён
+    stop();
 
     if (rawBuffer)
         heap_caps_free(rawBuffer);
@@ -80,7 +78,6 @@ void WavRecorder::recordingTask(void* arg)
         return;
     }
 
-    // читаем пока не досрочная остановка и не достигнут лимит
     const size_t maxSamples = self->rawBufferCap;
     while (!self->stopRequested && self->rawReadCount < maxSamples)
     {
@@ -92,10 +89,8 @@ void WavRecorder::recordingTask(void* arg)
         self->rawReadCount += bytes / sizeof(int32_t);
     }
 
-    // Деинициализируем микрофон, чтобы освободить I2S
     mic.deinit();
 
-    // ► Анализ амплитуды
     int32_t maxAbs = 0;
     for (size_t i = 0; i + 1 < self->rawReadCount; i += 2)
     {
@@ -106,7 +101,6 @@ void WavRecorder::recordingTask(void* arg)
     }
     float autoGain = (maxAbs > 0) ? (32767.0f / static_cast<float>(maxAbs)) : 1.0f;
 
-    // ► Подготовка WAV-буфера
     size_t finalSamples = self->rawReadCount / 2;
     size_t dataBytes    = finalSamples * sizeof(int16_t);
     size_t totalSize    = dataBytes + 44;
@@ -125,13 +119,11 @@ void WavRecorder::recordingTask(void* arg)
     memset(self->wavBuffer, 0, totalSize);
     self->writeHeader(self->wavBuffer, dataBytes);
 
-    // ► Конвертация в 16-бит PCM
     int16_t* outPtr = reinterpret_cast<int16_t*>(self->wavBuffer + 44);
     self->convert32to16(self->rawBuffer, outPtr, self->rawReadCount, autoGain);
     self->wavSize = totalSize;
     ESP_LOGI(Tag, "Recording done: %u bytes", self->wavSize);
 
-    // Финальная очистка
     heap_caps_free(self->rawBuffer);
     self->rawBuffer   = nullptr;
     self->isRecording = false;
@@ -171,4 +163,19 @@ void WavRecorder::convert32to16(const int32_t* in, int16_t* out, size_t count, f
             scaled = -32768.0f;
         out[outIdx++] = static_cast<int16_t>(scaled);
     }
+}
+
+const uint8_t* WavRecorder::getWavData() const
+{
+    return wavBuffer;
+}
+
+size_t WavRecorder::getSize() const
+{
+    return wavSize;
+}
+
+bool WavRecorder::recording() const
+{
+    return isRecording;
 }

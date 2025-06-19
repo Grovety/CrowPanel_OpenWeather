@@ -8,17 +8,17 @@
 
 class BrightnessBlock
 {
-    static constexpr char* Tag = "Brightness block";
-    MenuPage               page;
-    FlexContainer          spacer;
-    FlexContainer          brightnessSwitchContainer;
-    SimpleLabel            brightnessSwitchLabel;
-    lv_obj_t*              brightnessSwitch = nullptr;
-    FlexContainer          brightnessSliderContainer;
-    SimpleLabel            brightnessSliderLabel;
-    lv_style_t             brightnessSliderStyle;
-    lv_obj_t*              brightnessSlider = nullptr;
-    SimpleLabel            brightnessManualValueLabel;
+    static constexpr const char* Tag = "Brightness block";
+    MenuPage                     page;
+    FlexContainer                spacer;
+    FlexContainer                brightnessSwitchContainer;
+    SimpleLabel                  brightnessSwitchLabel;
+    lv_obj_t*                    brightnessSwitch = nullptr;
+    FlexContainer                brightnessSliderContainer;
+    SimpleLabel                  brightnessSliderLabel;
+    lv_style_t                   brightnessSliderStyle;
+    lv_obj_t*                    brightnessSlider = nullptr;
+    SimpleLabel                  brightnessManualValueLabel;
 
     void setSliderDisabled(bool disabled);
 

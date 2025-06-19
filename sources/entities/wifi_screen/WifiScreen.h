@@ -51,7 +51,7 @@ class WifiScreen : public ScreenBase
     }* ui              = nullptr;
     lv_obj_t* keyboard = nullptr;
 
-    static constexpr char* Tag = "WifiScreen";
+    static constexpr const char* Tag = "WifiScreen";
 
     void createMenu(lv_obj_t*);
 
